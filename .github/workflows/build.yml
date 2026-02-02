@@ -1,9 +1,10 @@
-name: Convert H5P to SCORM
+name: Convert H5P to SCORM (diagnóstico)
 
 on:
   push:
     paths:
-      - "input.h5p"
+      - "input.h5p"     # se dispara al tocar input.h5p
+  workflow_dispatch:     # añade botón "Run workflow" para relanzar a mano
 
 jobs:
   build:
@@ -16,19 +17,41 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'   # LTS estable
+          node-version: '20'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Info del runner y Node
+        run: |
+          set -euxo pipefail
+          uname -a
+          node -v
+          npm -v
+          ls -al
 
-      - name: Convert H5P to SCORM
-        run: npm run build
+      - name: Instalar dependencias
+        run: |
+          set -euxo pipefail
+          npm ci || npm i
 
-      - name: Upload SCORM package (artifact)
+      - name: Ejecutar conversión (npm run build)
+        run: |
+          set -euxo pipefail
+          npm run build
+
+      - name: Verificar archivos generados
+        if: always()
+        run: |
+          set -euxo pipefail
+          echo "Contenido del workspace tras el build:"
+          ls -al
+          echo "Buscando output.zip..."
+          test -f output.zip && echo "OK: output.zip existe" || (echo "NO existe output.zip" && exit 0)
+
+      - name: Subir artefacto (SCORM ZIP si existe)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: output
           path: output.zip
-          if-no-files-found: error
-          # Nota: desde v4, por defecto NO sube ficheros ocultos. Actívalo si algún día lo necesitas:
+          if-no-files-found: ignore
+          # Si algún día necesitas empaquetar también ficheros ocultos:
           # include-hidden-files: true

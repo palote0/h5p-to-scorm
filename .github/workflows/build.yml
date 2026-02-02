@@ -1,4 +1,4 @@
-name: Convert H5P to SCORM (diagnóstico)
+name: Convert H5P to SCORM (diagnstico)
 
 on:
   push:
